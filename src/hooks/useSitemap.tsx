@@ -90,7 +90,7 @@ export function useSitemap({ containerId }: UseSitemapProps) {
               : undefined
           })),
           edges: edgesData.map((edge: any) => ({
-            id: edge.id.toString(),
+            id: edge.id.toString(), // Ensure edge ID is also a string
             source: edge.source,
             target: edge.target
           }))
