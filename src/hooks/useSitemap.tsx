@@ -1,22 +1,9 @@
 
 import { useRef, useEffect, useState, useCallback } from 'react';
-import type { Core, NodeSingular, ElementDefinition, StylesheetStyle } from 'cytoscape';
+import type { Core, NodeSingular, ElementDefinition } from 'cytoscape';
 import type { NodeStatus, SitemapNode, SitemapEdge, SitemapData } from '@/types/sitemap';
 import { supabase } from '@/integrations/supabase/client';
-
-// Define a function that maps status to color
-const getColorFromStatus = (status: NodeStatus): string => {
-  switch(status) {
-    case 'existing':
-      return '#ff0092'; // Pink color for existing items
-    case 'new':
-      return '#3c763d'; // Green for new
-    case 'delete':
-      return '#a94442'; // Red for delete
-    default:
-      return '#ff0092';
-  }
-};
+import { getColorByStatus } from '@/components/sitemap/utils';
 
 // Initial sitemap data structure - will be populated from Supabase
 const initialData: SitemapData = {
@@ -91,8 +78,8 @@ export function useSitemap({ containerId }: UseSitemapProps) {
           })),
           edges: edgesData.map((edge: any) => ({
             id: String(edge.id), // Explicitly convert to string using String() 
-            source: edge.source,
-            target: edge.target
+            source: String(edge.source),
+            target: String(edge.target)
           }))
         };
         console.log("Loaded data from Supabase:", loadedData);
@@ -141,7 +128,8 @@ export function useSitemap({ containerId }: UseSitemapProps) {
           status: node.status,
           description: node.description || '',
           position_x: node.position ? node.position.x : 0,
-          position_y: node.position ? node.position.y : 0
+          position_y: node.position ? node.position.y : 0,
+          color: node.color || getColorByStatus(node.status)
         }));
         
         console.log("Nodes to insert:", nodesToInsert);
@@ -278,7 +266,7 @@ export function useSitemap({ containerId }: UseSitemapProps) {
       data: {
         id: node.id,
         label: node.label,
-        color: node.color || getColorFromStatus(node.status),
+        color: node.color || getColorByStatus(node.status),
         status: node.status,
         description: node.description
       },
@@ -340,7 +328,7 @@ export function useSitemap({ containerId }: UseSitemapProps) {
       const newNode = {
         id: newId,
         ...node,
-        color: node.color || getColorFromStatus(node.status)
+        color: node.color || getColorByStatus(node.status)
       };
       
       // Add new edges for connections
@@ -364,7 +352,7 @@ export function useSitemap({ containerId }: UseSitemapProps) {
           return {
             ...node,
             ...updates,
-            color: updates.status ? getColorFromStatus(updates.status) : node.color
+            color: updates.status ? getColorByStatus(updates.status) : node.color
           };
         }
         return node;

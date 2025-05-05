@@ -1,6 +1,5 @@
 
-import React from 'react';
-import { SitemapData } from '@/types/sitemap';
+import React, { useRef, useEffect } from 'react';
 
 interface SitemapVisualizationProps {
   loading: boolean;
@@ -18,9 +17,11 @@ export const SitemapVisualization: React.FC<SitemapVisualizationProps> = ({
   ) : (
     <div 
       id="sitemap-cy" 
-      ref={el => {
-        if (containerRef.current !== el) {
-          containerRef.current = el;
+      ref={(el) => {
+        // Only update if value is different
+        if (containerRef.current !== el && el !== null) {
+          // Using this pattern to work with read-only ref
+          (containerRef as React.MutableRefObject<HTMLElement | null>).current = el;
         }
       }} 
       className="w-full h-[600px] bg-white rounded border border-gray-200"

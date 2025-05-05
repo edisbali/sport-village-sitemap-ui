@@ -9,3 +9,16 @@ export const getColorByStatus = (status: NodeStatus): string => {
     default: return '#ff0092';
   }
 };
+
+export const getStatusLabel = (status: NodeStatus): string => {
+  switch(status) {
+    case 'existing': return 'Sezioni esistenti';
+    case 'new': return 'Nuove sezioni';
+    case 'delete': return 'Sezioni da eliminare';
+    default: return 'Sezione';
+  }
+};
+
+export const generateUniqueId = (): string => {
+  return `node_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+};
