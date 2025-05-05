@@ -81,7 +81,7 @@ export function useSitemap({ containerId }: UseSitemapProps) {
       if (nodesData && nodesData.length > 0) {
         const loadedData: SitemapData = {
           nodes: nodesData.map((node: any) => ({
-            id: node.id.toString(), // Convert number to string here
+            id: String(node.id), // Explicitly convert number to string using String()
             label: node.label,
             status: node.status as NodeStatus,
             description: node.description,
@@ -90,7 +90,7 @@ export function useSitemap({ containerId }: UseSitemapProps) {
               : undefined
           })),
           edges: edgesData.map((edge: any) => ({
-            id: edge.id.toString(), // Ensure edge ID is also a string
+            id: String(edge.id), // Explicitly convert to string using String() 
             source: edge.source,
             target: edge.target
           }))
