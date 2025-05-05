@@ -161,7 +161,7 @@ export function useSitemap({ containerId }: UseSitemapProps) {
         const idMapping: Record<string, string> = {};
         insertedNodes.forEach((node: any, index: number) => {
           // Fix: Convert node.id to string explicitly here
-          idMapping[updatedData.nodes[index].id] = node.id.toString();
+          idMapping[updatedData.nodes[index].id] = String(node.id);
         });
         
         // Insert edges using the new node IDs
