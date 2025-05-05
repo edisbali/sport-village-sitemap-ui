@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Header } from '@/components/Header';
 import { Hero } from '@/components/Hero';
 import { ProjectOverview } from '@/components/ProjectOverview';
@@ -8,18 +8,6 @@ import { PricingComparison } from '@/components/PricingComparison';
 import { Footer } from '@/components/Footer';
 
 const Index = () => {
-  // Add script for cytoscape.js
-  useEffect(() => {
-    const script = document.createElement('script');
-    script.src = 'https://unpkg.com/cytoscape@3.23.0/dist/cytoscape.min.js';
-    script.async = true;
-    document.body.appendChild(script);
-
-    return () => {
-      document.body.removeChild(script);
-    };
-  }, []);
-
   return (
     <div className="min-h-screen flex flex-col">
       <Header />

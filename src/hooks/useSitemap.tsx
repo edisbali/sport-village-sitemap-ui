@@ -1,6 +1,5 @@
-
 import { useRef, useEffect, useState, useCallback } from 'react';
-import cytoscape from 'cytoscape';
+import type { Core, NodeSingular, ElementDefinition } from 'cytoscape';
 import type { NodeStatus, SitemapNode, SitemapEdge, SitemapData } from '@/types/sitemap';
 import { createClient } from '@supabase/supabase-js';
 
@@ -71,10 +70,25 @@ interface UseSitemapProps {
 }
 
 export function useSitemap({ containerId }: UseSitemapProps) {
-  const cyRef = useRef<cytoscape.Core | null>(null);
+  const cyRef = useRef<Core | null>(null);
   const containerRef = useRef<HTMLElement | null>(null);
   const [data, setData] = useState<SitemapData>(initialData);
   const [loading, setLoading] = useState(true);
+  const [cytoscapeLoaded, setCytoscapeLoaded] = useState(false);
+  
+  // Import and load cytoscape dynamically
+  useEffect(() => {
+    const loadCytoscape = async () => {
+      try {
+        const cytoscapeModule = await import('cytoscape');
+        setCytoscapeLoaded(true);
+      } catch (error) {
+        console.error("Error loading cytoscape:", error);
+      }
+    };
+    
+    loadCytoscape();
+  }, []);
   
   // Function to fetch data from Supabase
   const fetchFromSupabase = useCallback(async () => {
@@ -212,47 +226,59 @@ export function useSitemap({ containerId }: UseSitemapProps) {
   
   // Initialize Cytoscape
   useEffect(() => {
-    if (containerRef.current && !cyRef.current) {
-      cyRef.current = cytoscape({
-        container: containerRef.current,
-        style: [
-          {
-            selector: 'node',
-            style: {
-              'label': 'data(label)',
-              'text-valign': 'center',
-              'text-halign': 'center',
-              'color': '#fff',
-              'font-size': '12px',
-              'text-outline-width': 2,
-              'text-outline-color': 'data(color)',
-              'background-color': 'data(color)',
-              'width': 50,
-              'height': 50,
-              'text-wrap': 'wrap',
-              'text-max-width': '100px',
-              'grabbable': true
-            }
-          },
-          {
-            selector: 'edge',
-            style: {
-              'width': 2,
-              'line-color': '#aaa',
-              'target-arrow-color': '#ccc',
-              'target-arrow-shape': 'triangle',
-              'curve-style': 'bezier'
-            }
-          }
-        ],
-        layout: {
-          name: 'preset', // Use preset layout to maintain positions
-          fit: true,
-          padding: 20
-        },
-        elements: []
-      });
-    }
+    if (!cytoscapeLoaded || !containerRef.current) return;
+    
+    const initCytoscape = async () => {
+      try {
+        const cytoscape = (await import('cytoscape')).default;
+        
+        if (containerRef.current && !cyRef.current) {
+          cyRef.current = cytoscape({
+            container: containerRef.current,
+            style: [
+              {
+                selector: 'node',
+                style: {
+                  'label': 'data(label)',
+                  'text-valign': 'center',
+                  'text-halign': 'center',
+                  'color': '#fff',
+                  'font-size': '12px',
+                  'text-outline-width': 2,
+                  'text-outline-color': 'data(color)',
+                  'background-color': 'data(color)',
+                  'width': 50,
+                  'height': 50,
+                  'text-wrap': 'wrap',
+                  'text-max-width': '100px',
+                  'grabbable': true
+                }
+              },
+              {
+                selector: 'edge',
+                style: {
+                  'width': 2,
+                  'line-color': '#aaa',
+                  'target-arrow-color': '#ccc',
+                  'target-arrow-shape': 'triangle',
+                  'curve-style': 'bezier'
+                }
+              }
+            ],
+            layout: {
+              name: 'preset', // Use preset layout to maintain positions
+              fit: true,
+              padding: 20
+            },
+            elements: []
+          });
+        }
+      } catch (error) {
+        console.error("Error initializing cytoscape:", error);
+      }
+    };
+    
+    initCytoscape();
     
     // Save reference to container for cleanup
     containerRef.current = document.getElementById(containerId);
@@ -266,11 +292,11 @@ export function useSitemap({ containerId }: UseSitemapProps) {
         cyRef.current = null;
       }
     };
-  }, [containerId, fetchFromSupabase]);
+  }, [containerId, fetchFromSupabase, cytoscapeLoaded]);
   
   // Update cytoscape when data changes
   useEffect(() => {
-    if (!cyRef.current || loading) return;
+    if (!cyRef.current || loading || !cytoscapeLoaded) return;
     
     // Clear existing elements
     cyRef.current.elements().remove();
@@ -329,7 +355,7 @@ export function useSitemap({ containerId }: UseSitemapProps) {
       setData(updatedData);
     }, 500);
     
-  }, [data, loading]);
+  }, [data, loading, cytoscapeLoaded]);
   
   // Functions to manipulate the sitemap
   const addNode = useCallback((node: Omit<SitemapNode, 'id'>, connections: string[] = []) => {

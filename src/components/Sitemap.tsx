@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSitemap } from '@/hooks/useSitemap';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,11 +22,13 @@ import {
 } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { type NodeStatus, type SitemapNode } from '@/types/sitemap';
+import { toast } from 'sonner';
 
 export const Sitemap: React.FC = () => {
   const { 
     containerRef, 
     data, 
+    loading,
     addNode, 
     updateNode, 
     removeNode, 
@@ -51,6 +52,16 @@ export const Sitemap: React.FC = () => {
     status: 'existing',
     color: '#31708f'
   });
+
+  const handleSaveToSupabase = async () => {
+    try {
+      await saveToSupabase();
+      toast.success('Modifiche salvate con successo!');
+    } catch (error) {
+      toast.error('Errore durante il salvataggio: ' + (error as Error).message);
+      console.error('Error saving to Supabase:', error);
+    }
+  };
   
   const selectedNode = selectedNodeId 
     ? data.nodes.find(node => node.id === selectedNodeId)
@@ -98,20 +109,6 @@ export const Sitemap: React.FC = () => {
   
   const handleNodeClick = (node: SitemapNode) => {
     setSelectedNodeId(node.id);
-    setNewNodeData({
-      label: node.label,
-      description: node.description || '',
-      status: node.status,
-      color: node.color || '#31708f'
-    });
-    
-    // Get current connections for this node
-    const nodeConnections = data.edges
-      .filter(edge => edge.source === node.id)
-      .map(edge => edge.target);
-    
-    setSelectedConnections(nodeConnections);
-    setShowEditDialog(true);
   };
   
   const handleConnectionToggle = (nodeId: string) => {
@@ -133,7 +130,7 @@ export const Sitemap: React.FC = () => {
           <Button onClick={() => setShowAddDialog(true)}>
             Aggiungi Nodo
           </Button>
-          <Button variant="outline" onClick={saveToSupabase}>
+          <Button variant="outline" onClick={handleSaveToSupabase}>
             Salva Modifiche
           </Button>
         </div>
@@ -154,17 +151,17 @@ export const Sitemap: React.FC = () => {
         </div>
       </div>
       
-      <div 
-        id="sitemap-cy" 
-        ref={el => containerRef.current = el} 
-        className="w-full h-[600px] bg-white rounded border border-gray-200"
-        onClick={(e) => {
-          const target = e.target as HTMLElement;
-          if (target.id === 'sitemap-cy') {
-            // Clicked on the background, not a node
-          }
-        }}
-      />
+      {loading ? (
+        <div className="w-full h-[600px] bg-white rounded border border-gray-200 flex items-center justify-center">
+          <p className="text-gray-500">Caricamento mappa del sito...</p>
+        </div>
+      ) : (
+        <div 
+          id="sitemap-cy" 
+          ref={el => containerRef.current = el} 
+          className="w-full h-[600px] bg-white rounded border border-gray-200"
+        />
+      )}
       
       {/* Add Node Dialog */}
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
