@@ -160,6 +160,7 @@ export function useSitemap({ containerId }: UseSitemapProps) {
         // Create a mapping of original node IDs to new Supabase IDs
         const idMapping: Record<string, string> = {};
         insertedNodes.forEach((node: any, index: number) => {
+          // Fix: Convert node.id to string explicitly here
           idMapping[updatedData.nodes[index].id] = node.id.toString();
         });
         
