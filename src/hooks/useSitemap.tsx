@@ -81,7 +81,7 @@ export function useSitemap({ containerId }: UseSitemapProps) {
       if (nodesData && nodesData.length > 0) {
         const loadedData: SitemapData = {
           nodes: nodesData.map((node: any) => ({
-            id: node.id.toString(),
+            id: node.id.toString(), // Convert number to string here
             label: node.label,
             status: node.status as NodeStatus,
             description: node.description,
