@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useSitemap } from '@/hooks/useSitemap';
 import { Button } from '@/components/ui/button';
@@ -50,8 +51,56 @@ export const Sitemap: React.FC = () => {
     label: '',
     description: '',
     status: 'existing',
-    color: '#31708f'
+    color: '#ff0092'
   });
+
+  useEffect(() => {
+    // Listen for node clicks
+    const handleNodeClick = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      const node = customEvent.detail;
+      console.log('Node click event received:', node);
+      
+      setSelectedNodeId(node.id);
+      
+      // Find node in data to get full details
+      const selectedNode = data.nodes.find(n => n.id === node.id);
+      if (selectedNode) {
+        // Set form data
+        setNewNodeData({
+          label: selectedNode.label,
+          description: selectedNode.description || '',
+          status: selectedNode.status,
+          color: selectedNode.color || getColorByStatus(selectedNode.status)
+        });
+        
+        // Set connections
+        const connections = data.edges
+          .filter(edge => edge.source === node.id)
+          .map(edge => edge.target);
+        setSelectedConnections(connections);
+        
+        // Show edit dialog
+        setShowEditDialog(true);
+      }
+    };
+    
+    window.addEventListener('node-click', handleNodeClick);
+    
+    return () => {
+      window.removeEventListener('node-click', handleNodeClick);
+    };
+  }, [data.edges, data.nodes]);
+  
+  // Helper function to get color by status
+  const getColorByStatus = (status: NodeStatus): string => {
+    switch(status) {
+      case 'existing': return '#ff0092';
+      case 'new': return '#3c763d';
+      case 'delete': return '#a94442';
+      default: return '#ff0092';
+    }
+  };
 
   const handleSaveToSupabase = async () => {
     try {
@@ -81,7 +130,7 @@ export const Sitemap: React.FC = () => {
       label: '',
       description: '',
       status: 'existing',
-      color: '#31708f'
+      color: '#ff0092'
     });
     setSelectedConnections([]);
   };
@@ -105,10 +154,6 @@ export const Sitemap: React.FC = () => {
     if (!selectedNodeId) return;
     removeNode(selectedNodeId);
     setShowEditDialog(false);
-  };
-  
-  const handleNodeClick = (node: SitemapNode) => {
-    setSelectedNodeId(node.id);
   };
   
   const handleConnectionToggle = (nodeId: string) => {
@@ -182,7 +227,7 @@ export const Sitemap: React.FC = () => {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="description">Descrizione</Label>
+              <Label htmlFor="description">URL / Descrizione</Label>
               <Textarea
                 id="description"
                 value={newNodeData.description}
@@ -196,7 +241,7 @@ export const Sitemap: React.FC = () => {
                 onValueChange={(value) => setNewNodeData({ 
                   ...newNodeData, 
                   status: value as NodeStatus,
-                  color: value === 'existing' ? '#31708f' : value === 'new' ? '#3c763d' : '#a94442'
+                  color: getColorByStatus(value as NodeStatus)
                 })}
                 className="flex space-x-4"
               >
@@ -273,7 +318,7 @@ export const Sitemap: React.FC = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="edit-description">Descrizione</Label>
+                <Label htmlFor="edit-description">URL / Descrizione</Label>
                 <Textarea
                   id="edit-description"
                   value={newNodeData.description}
@@ -287,7 +332,7 @@ export const Sitemap: React.FC = () => {
                   onValueChange={(value) => setNewNodeData({ 
                     ...newNodeData, 
                     status: value as NodeStatus,
-                    color: value === 'existing' ? '#31708f' : value === 'new' ? '#3c763d' : '#a94442'
+                    color: getColorByStatus(value as NodeStatus)
                   })}
                   className="flex space-x-4"
                 >

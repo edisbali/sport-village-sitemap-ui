@@ -11,6 +11,7 @@ export interface SitemapNode {
     x: number;
     y: number;
   };
+  url?: string;
 }
 
 export interface SitemapEdge {

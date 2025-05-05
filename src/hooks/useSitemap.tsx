@@ -1,61 +1,14 @@
+
 import { useRef, useEffect, useState, useCallback } from 'react';
 import type { Core, NodeSingular, ElementDefinition, StylesheetStyle } from 'cytoscape';
 import type { NodeStatus, SitemapNode, SitemapEdge, SitemapData } from '@/types/sitemap';
-import { createClient } from '@supabase/supabase-js';
-
-// Initialize Supabase client
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://l7xwi3vdqbuphwbseqkv.supabase.co';
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imw3eHdpM3ZkcWJ1cGh3YnNlcWt2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTU0NjAyMzksImV4cCI6MjAzMTAzNjIzOX0.vKDga2rzQyJdQMWj6X4zYKuefBV6FgBR1lCNiI6MFng';
-const supabase = createClient(supabaseUrl, supabaseKey);
-
-// Initial sitemap data
-const initialData: SitemapData = {
-  nodes: [
-    { id: '1', label: 'Home', status: 'existing' },
-    { id: '2', label: 'Struttura', status: 'existing' },
-    { id: '3', label: 'Servizi', status: 'existing' },
-    { id: '4', label: 'Contatti', status: 'existing' },
-    { id: '5', label: 'Palestra', status: 'existing' },
-    { id: '6', label: 'Piscine', status: 'existing' },
-    { id: '7', label: 'Fitness', status: 'existing' },
-    { id: '8', label: 'News', status: 'existing' },
-    { id: '9', label: 'Corsi Nuoto', status: 'existing' },
-    { id: '10', label: 'Corsi Fitness', status: 'existing' },
-    { id: '11', label: 'Corsi Crossfit', status: 'existing' },
-    { id: '12', label: 'Corsi Padel', status: 'existing' },
-    { id: '13', label: 'Personal Training', status: 'existing' },
-    { id: '14', label: 'Trattamenti', status: 'existing' },
-    { id: '15', label: 'Mangio', status: 'existing' },
-    { id: '16', label: 'Koala', status: 'existing' },
-    { id: '17', label: 'Giardino', status: 'existing' },
-    { id: '18', label: 'Noi Club', status: 'existing' },
-  ],
-  edges: [
-    { id: 'e1', source: '1', target: '2' },
-    { id: 'e2', source: '1', target: '3' },
-    { id: 'e3', source: '1', target: '4' },
-    { id: 'e4', source: '1', target: '8' },
-    { id: 'e5', source: '3', target: '5' },
-    { id: 'e6', source: '3', target: '6' },
-    { id: 'e7', source: '3', target: '7' },
-    { id: 'e8', source: '3', target: '9' },
-    { id: 'e9', source: '3', target: '10' },
-    { id: 'e10', source: '3', target: '11' },
-    { id: 'e11', source: '3', target: '12' },
-    { id: 'e12', source: '3', target: '13' },
-    { id: 'e13', source: '3', target: '14' },
-    { id: 'e14', source: '3', target: '15' },
-    { id: 'e15', source: '3', target: '16' },
-    { id: 'e16', source: '3', target: '17' },
-    { id: 'e17', source: '3', target: '18' },
-  ]
-};
+import { supabase } from '@/integrations/supabase/client';
 
 // Define a function that maps status to color
 const getColorFromStatus = (status: NodeStatus): string => {
   switch(status) {
     case 'existing':
-      return '#ff0092'; // Pink for existing (changed from blue)
+      return '#ff0092'; // Pink color for existing items
     case 'new':
       return '#3c763d'; // Green for new
     case 'delete':
@@ -63,6 +16,12 @@ const getColorFromStatus = (status: NodeStatus): string => {
     default:
       return '#ff0092';
   }
+};
+
+// Initial sitemap data structure - will be populated from Supabase
+const initialData: SitemapData = {
+  nodes: [],
+  edges: []
 };
 
 interface UseSitemapProps {
@@ -118,7 +77,7 @@ export function useSitemap({ containerId }: UseSitemapProps) {
         return;
       }
       
-      // If we have data from Supabase, use it. Otherwise, use initial data
+      // If we have data from Supabase, use it
       if (nodesData && nodesData.length > 0) {
         const loadedData: SitemapData = {
           nodes: nodesData.map((node: any) => ({
@@ -139,7 +98,7 @@ export function useSitemap({ containerId }: UseSitemapProps) {
         console.log("Loaded data from Supabase:", loadedData);
         setData(loadedData);
       } else {
-        console.log("No data in Supabase, using initial data");
+        console.log("No data in Supabase");
         setData(initialData);
       }
       
@@ -193,7 +152,7 @@ export function useSitemap({ containerId }: UseSitemapProps) {
         
         if (nodesError) {
           console.error("Error saving nodes to Supabase:", nodesError);
-          return;
+          throw nodesError;
         }
         
         console.log("Inserted nodes:", insertedNodes);
@@ -217,12 +176,16 @@ export function useSitemap({ containerId }: UseSitemapProps) {
         
         if (edgesError) {
           console.error("Error saving edges to Supabase:", edgesError);
+          throw edgesError;
         }
         
         console.log("Data saved to Supabase successfully!");
+        return true;
       }
+      return false;
     } catch (error) {
       console.error("Error saving to Supabase:", error);
+      throw error;
     }
   }, [data]);
   
@@ -250,7 +213,6 @@ export function useSitemap({ containerId }: UseSitemapProps) {
                 'height': 50,
                 'text-wrap': 'wrap',
                 'text-max-width': '100px',
-                // grabbable is a valid style property in Cytoscape
                 'grabbable': true
               } as any // Use any to bypass TypeScript checking for the style
             },
@@ -272,13 +234,25 @@ export function useSitemap({ containerId }: UseSitemapProps) {
           },
           elements: []
         });
+
+        // Set up node click handler for selection
+        cyRef.current.on('tap', 'node', function(event) {
+          const node = event.target.data();
+          console.log('Node clicked:', node);
+          // Custom event to notify parent component
+          const customEvent = new CustomEvent('node-click', { detail: node });
+          window.dispatchEvent(customEvent);
+        });
       }
     } catch (error) {
       console.error("Error initializing cytoscape:", error);
     }
     
     // Save reference to container for cleanup
-    containerRef.current = document.getElementById(containerId);
+    const container = document.getElementById(containerId);
+    if (container) {
+      containerRef.current = container;
+    }
     
     // Fetch data from Supabase on initial load
     fetchFromSupabase();
@@ -304,7 +278,8 @@ export function useSitemap({ containerId }: UseSitemapProps) {
         id: node.id,
         label: node.label,
         color: node.color || getColorFromStatus(node.status),
-        status: node.status
+        status: node.status,
+        description: node.description
       },
       position: node.position || undefined
     }));
@@ -364,7 +339,7 @@ export function useSitemap({ containerId }: UseSitemapProps) {
       const newNode = {
         id: newId,
         ...node,
-        color: getColorFromStatus(node.status)
+        color: node.color || getColorFromStatus(node.status)
       };
       
       // Add new edges for connections

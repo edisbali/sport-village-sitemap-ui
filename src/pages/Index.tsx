@@ -14,7 +14,7 @@ const Index = () => {
       <main className="flex-grow">
         <Hero />
         <ProjectOverview />
-        <div id="sitemapSection" className="py-16">
+        <div id="sitemapSection" className="py-16 bg-white">
           <div className="container mx-auto px-6">
             <Sitemap />
           </div>
